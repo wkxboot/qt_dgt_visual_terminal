@@ -16,12 +16,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     int get_addr(void);
-    enum {
-        OPT_QUERY_NET_WEIGHT,
-        OPT_REMOVE_TARE,
-        OPT_CALIBRATION_ZERO,
-        OPT_CALIBRATION_FULL
-    };
+
 public slots:
     void handle_open_serial(int,int);
     void handle_scale_result(int,int,int);

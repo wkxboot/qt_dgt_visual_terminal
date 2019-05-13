@@ -1,9 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "qmessagebox.h"
 #include "qobject.h"
+#include "qmessagebox.h"
 #include "communication.h"
 #include "qtimer.h"
+#include "qdebug.h"
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -81,47 +83,43 @@ void MainWindow::handle_scale_result(int rc,int type,int value)
 {
     switch (type) {
     case communication::QUERY_WEIGHT:
-        if (rc == communication::SERIAL_SUCCESS) {
-            ui->weight_display->display("Err");
+        if (rc == communication::SERIAL_SUCCESS && value != 0x7FFF) {
+            ui->weight_display->display(QString::number(value));
          } else {
-              ui->weight_display->display("------");
-             }
-         } else {
-             ui->weight_display->display(err.toInt());
-             QThread::msleep(20);
-             emit req_scale((uint8_t)get_addr(),MainWindow::OPT_QUERY_NET_WEIGHT,0);
+            ui->weight_display->display("err");
          }
-        /*重新轮询*/
-         emit
-        break;
-            ui->calibration_zero_button->setEnabled(true);
-            if (result == 0) {
-             QMessageBox::information(this,"成功","0点校准成功",QMessageBox::Ok);
-         } else {
-             QMessageBox::information(this,"失败","0点校准失败",QMessageBox::Ok);
-        }
-        break;
-    case MainWindow::OPT_CALIBRATION_FULL:
-        //ui->calibration_1000_button->setEnabled(true);
-         if (result == 0) {
-             QMessageBox::information(this,"成功","增益校准成功",QMessageBox::Ok);
-         } else {
-             QMessageBox::information(this,"失败","增益校准失败",QMessageBox::Ok);
-        }
-        break;
 
-    case MainWindow::OPT_REMOVE_TARE:
-        if (result == 0) {
+        /*重新轮询净重*/
+        emit req_scale((uint8_t)get_addr(),communication::QUERY_WEIGHT,0);
+        break;
+    case communication::REMOVE_TARE_WEIGHT:
+        if (rc == 0) {
             QMessageBox::information(this,"成功","去皮成功",QMessageBox::Ok);
         } else {
             QMessageBox::information(this,"失败","去皮失败",QMessageBox::Ok);
-       }
+        }
         break;
+    case communication::CALIBRATION_WEIGHT_ZERO:
+        if (rc == 0) {
+            QMessageBox::information(this,"成功","0点校准成功",QMessageBox::Ok);
+        } else {
+            QMessageBox::information(this,"失败","0点校准失败",QMessageBox::Ok);
+        }
+        break;
+    case communication::CALIBRATION_WEIGHT_FULL:
+        if (rc == 0) {
+             QMessageBox::information(this,"成功","增益校准成功",QMessageBox::Ok);
+        } else {
+             QMessageBox::information(this,"失败","增益校准失败",QMessageBox::Ok);
+        }
+        break;
+    default:
+        qDebug()<<"err in handle scale rsp.\r\n";
 
     }
-
-
 }
+
+
 
 int MainWindow::get_addr(void)
 {
