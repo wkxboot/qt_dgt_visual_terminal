@@ -41,12 +41,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QThread *thread = new QThread(0);
     comm->moveToThread(thread);
-    comm->serial->moveToThread(thread);
+    comm->m_serial->moveToThread(thread);
     thread->start();
-
-    loop_weight_timer = new QTimer(this);
-    loop_weight_timer->setInterval(1100);
-
 }
 
 MainWindow::~MainWindow()
@@ -54,42 +50,52 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::loop_weight_timeout()
-{
 
-}
-
-void MainWindow::rsp_serial_open_result(int rc)
+void MainWindow::handle_open_serial(int rc,int type)
 {
-    if (rc == 0) {
-        ui->port_list->setEnabled(false);
-        ui->bandrate_list->setEnabled(false);
-        ui->open->setText("关闭");
-        qDebug("打开串口成功.\r\n");
+    if (type == communication::SERIAL_OPEN) {
+        if (rc == communication::SERIAL_SUCCESS) {
+
+            ui->port_list->setEnabled(false);
+            ui->bandrate_list->setEnabled(false);
+            ui->open->setText("关闭");
+            qDebug("打开串口成功.\r\n");
+        } else {
+            QMessageBox::information(this,"错误",ui->port_list->currentText() + "串口打开失败",QMessageBox::Ok);
+        }
+
     } else {
-        QMessageBox::information(this,"错误",ui->port_list->currentText() + "端口无效",QMessageBox::Ok);
+        if (rc == communication::SERIAL_SUCCESS) {
+
+            ui->port_list->setEnabled(true);
+            ui->bandrate_list->setEnabled(true);
+            ui->open->setText("打开");
+            qDebug("关闭串口成功.\r\n");
+        } else {
+            QMessageBox::information(this,"错误",ui->port_list->currentText() + "串口关闭失败",QMessageBox::Ok);
+        }
     }
 }
 
-void MainWindow::rsp_serial_close_result(int rc)
+void MainWindow::handle_scale_result(int rc,int type,int value)
 {
-    if (rc == 0) {
-    ui->port_list->setEnabled(true);
-    ui->bandrate_list->setEnabled(true);
-    ui->open->setText("打开");
-    qDebug("关闭串口成功.");
-    } else {
-        QMessageBox::information(this,"错误",ui->port_list->currentText() + "关闭串口失败.\r\n",QMessageBox::Ok);
-    }
-}
-
-
-void MainWindow::rsp_scale_result(uint8_t opt,int16_t result,QString err)
-{
-    switch (opt) {
-    case MainWindow::OPT_CALIBRATION_ZERO:
-        ui->calibration_zero_button->setEnabled(true);
-         if (result == 0) {
+    switch (type) {
+    case communication::QUERY_WEIGHT:
+        if (rc == communication::SERIAL_SUCCESS) {
+            ui->weight_display->display("Err");
+         } else {
+              ui->weight_display->display("------");
+             }
+         } else {
+             ui->weight_display->display(err.toInt());
+             QThread::msleep(20);
+             emit req_scale((uint8_t)get_addr(),MainWindow::OPT_QUERY_NET_WEIGHT,0);
+         }
+        /*重新轮询*/
+         emit
+        break;
+            ui->calibration_zero_button->setEnabled(true);
+            if (result == 0) {
              QMessageBox::information(this,"成功","0点校准成功",QMessageBox::Ok);
          } else {
              QMessageBox::information(this,"失败","0点校准失败",QMessageBox::Ok);
@@ -103,21 +109,7 @@ void MainWindow::rsp_scale_result(uint8_t opt,int16_t result,QString err)
              QMessageBox::information(this,"失败","增益校准失败",QMessageBox::Ok);
         }
         break;
-    case MainWindow::OPT_QUERY_NET_WEIGHT:
-         if (result < 0) {
-             if (loop_weight) {
-              ui->weight_display->display("Err");
-             } else {
-              ui->weight_display->display("------");
-             }
-         } else {
-             ui->weight_display->display(err.toInt());
-             QThread::msleep(20);
-             emit req_scale((uint8_t)get_addr(),MainWindow::OPT_QUERY_NET_WEIGHT,0);
-         }
-        /*重新轮询*/
-         emit
-        break;
+
     case MainWindow::OPT_REMOVE_TARE:
         if (result == 0) {
             QMessageBox::information(this,"成功","去皮成功",QMessageBox::Ok);

@@ -23,10 +23,8 @@ public:
         OPT_CALIBRATION_FULL
     };
 public slots:
-    void loop_weight_timeout(void);
-    void rsp_scale_result(uint8_t opt,int16_t result,QString err);
-    void rsp_serial_open_result(int rc);
-    void rsp_serial_close_result(int rc);
+    void handle_open_serial(int,int);
+    void handle_scale_result(int,int,int);
 
     void on_weight_loop_button_clicked();
 
@@ -43,13 +41,12 @@ public slots:
     void on_open_clicked();
 
 signals:
-    void req_scale(uint8_t addr,uint8_t code,int param);
-    void req_serial(QString port,int baudrate);
+    void req_scale(uint8_t addr,uint8_t type,int value);
+    void req_serial(QString port,int baudrate,int baud_rates,int data_bits,int stop_bits);
 private:
     Ui::MainWindow *ui;
-    communication *comm;
-    QTimer *loop_weight_timer;
-    bool loop_weight;
+    communication   *comm;
+    QTimer *m_query_weight_timer;
 };
 
 #endif // MAINWINDOW_H

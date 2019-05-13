@@ -28,12 +28,14 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     crc16.cpp \
-    communication.cpp
+    communication.cpp \
+    request.cpp
 
 HEADERS += \
         mainwindow.h \
     crc16.h \
-    communication.h
+    communication.h \
+    request.h
 
 FORMS += \
         mainwindow.ui
