@@ -29,22 +29,39 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->bandrate_list->addItem("9600");
     ui->bandrate_list->setCurrentIndex(0);
 
-    ui->addr_input->setText("1");
+    ui->databits_list->addItem("8");
+    ui->databits_list->addItem("7");
+    ui->bandrate_list->setCurrentIndex(0);
+
+    ui->parity_list->addItem("无校验");
+    ui->parity_list->addItem("奇校验");
+    ui->bandrate_list->addItem("偶校验");
+    ui->bandrate_list->setCurrentIndex(0);
+
+    QRegExp regExp("[1-9]{0,3}");
+    ui->addr_input->setValidator(new QRegExpValidator(regExp, this));
+
+    ui->addr_input->setText(QString::number(1));
+
+    ui->weight_display->display("----------");
 
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<int16_t>("int16_t");
 
-    QObject::connect(this,SIGNAL(req_serial(QString,int)),comm,SLOT(on_serial_req(QString,int)));
-    QObject::connect(comm,SIGNAL(rsp_serial_open_req_result(int)),this,SLOT(rsp_serial_open_result(int)));
-    QObject::connect(comm,SIGNAL(rsp_serial_close_req_result(int)),this,SLOT(rsp_serial_close_result(int)));
+    QObject::connect(this,SIGNAL(req_serial(QString,int,int,int)),comm,SLOT(handle_open_serial(QString,int,int,int)));
 
-    QObject::connect(this,SIGNAL(req_scale(uint8_t,uint8_t,int)),comm,SLOT(on_scale_req(uint8_t,uint8_t,int)));
-    QObject::connect(comm,SIGNAL(rsp_scale_req_result(uint8_t,int16_t,QString)),this,SLOT(rsp_scale_result(uint8_t,int16_t,QString)));
+    QObject::connect(this,SIGNAL(req_scale(int,int,int)),comm,SLOT(handle_scale(int,int,int)));
+
+
+    QObject::connect(comm,SIGNAL(rsp_open_serial(int,int)),this,SLOT(handle_open_serial(int,int)));
+    QObject::connect(comm,SIGNAL(rsp_result(int,int,int)),this,SLOT(handle_scale_result(int,int,int)));
 
     QThread *thread = new QThread(0);
     comm->moveToThread(thread);
     comm->m_serial->moveToThread(thread);
     thread->start();
+
+
 }
 
 MainWindow::~MainWindow()
@@ -60,8 +77,14 @@ void MainWindow::handle_open_serial(int rc,int type)
 
             ui->port_list->setEnabled(false);
             ui->bandrate_list->setEnabled(false);
+            ui->databits_list->setEnabled(false);
+            ui->parity_list->setEnabled(false);
+            ui->addr_input->setEnabled(false);
+
             ui->open->setText("关闭");
             qDebug("打开串口成功.\r\n");
+
+            query_weight();
         } else {
             QMessageBox::information(this,"错误",ui->port_list->currentText() + "串口打开失败",QMessageBox::Ok);
         }
@@ -71,8 +94,13 @@ void MainWindow::handle_open_serial(int rc,int type)
 
             ui->port_list->setEnabled(true);
             ui->bandrate_list->setEnabled(true);
+            ui->databits_list->setEnabled(true);
+            ui->parity_list->setEnabled(true);
+            ui->addr_input->setEnabled(true);
+
             ui->open->setText("打开");
             qDebug("关闭串口成功.\r\n");
+            ui->weight_display->display("----------");
         } else {
             QMessageBox::information(this,"错误",ui->port_list->currentText() + "串口关闭失败",QMessageBox::Ok);
         }
@@ -90,7 +118,7 @@ void MainWindow::handle_scale_result(int rc,int type,int value)
          }
 
         /*重新轮询净重*/
-        emit req_scale((uint8_t)get_addr(),communication::QUERY_WEIGHT,0);
+        emit req_scale(get_addr(),communication::QUERY_WEIGHT,0);
         break;
     case communication::REMOVE_TARE_WEIGHT:
         if (rc == 0) {
@@ -129,91 +157,83 @@ int MainWindow::get_addr(void)
        QMessageBox::information(this,"错误","变送器地址为空",QMessageBox::Ok);
        return -1;
     }
+
     addr = (uint8_t)ui->addr_input->text().toInt();
 
-    if (addr == 0) {
-        QMessageBox::information(this,"错误","变送器地址错误",QMessageBox::Ok);
-        return -1;
-    }
     return addr;
 }
 
-void MainWindow::on_weight_loop_button_clicked()
+void MainWindow::query_weight()
 {
-    int rc;
-    rc = get_addr();
-    if (rc > 0) {
-        emit req_scale((uint8_t)rc,MainWindow::OPT_QUERY_NET_WEIGHT,0);
-    if (loop_weight == false) {
-        loop_weight = true;
-        ui->addr_input->setEnabled(false);
-        ui->weight_loop_button->setText("关闭轮询净重");
-        ui->remove_tare_button->setEnabled(false);
-        ui->calibration_zero_button->setEnabled(false);
-        ui->calibration_1000_button->setEnabled(false);
-        ui->calibration_2000_button->setEnabled(false);
-        ui->calibration_5000_button->setEnabled(false);
+    int addr;
 
-    } else {
-        loop_weight = false;
+    addr = get_addr();
 
-        ui->weight_loop_button->setText("轮询净重");
-        ui->addr_input->setEnabled(true);
-        ui->remove_tare_button->setEnabled(true);
-        ui->calibration_zero_button->setEnabled(true);
-        ui->calibration_1000_button->setEnabled(true);
-        ui->calibration_2000_button->setEnabled(true);
-        ui->calibration_5000_button->setEnabled(true);
-    }
+    if (addr > 0) {
+        emit req_scale(addr,communication::QUERY_WEIGHT,0);
     }
 }
 
 void MainWindow::on_calibration_zero_button_clicked()
 {
-    int rc;
-    rc = get_addr();
-    if (rc > 0) {
-        emit req_scale((uint8_t)rc,MainWindow::OPT_CALIBRATION_ZERO,0);
+    int addr;
+    addr = get_addr();
+
+    if (addr > 0) {
+        emit req_scale(addr,communication::CALIBRATION_WEIGHT_ZERO,0);
     }
 }
 
 void MainWindow::on_calibration_1000_button_clicked()
 {
-    int rc;
-    rc = get_addr();
-    if (rc > 0) {
-        emit req_scale((uint8_t)rc,MainWindow::OPT_CALIBRATION_FULL,1000);
+    int addr;
+
+    addr = get_addr();
+
+    if (addr > 0) {
+        emit req_scale(addr,communication::CALIBRATION_WEIGHT_FULL,1000);
     }
 }
 
 void MainWindow::on_calibration_2000_button_clicked()
 {
-    int rc;
-    rc = get_addr();
-    if (rc > 0) {
-        emit req_scale((uint8_t)rc,MainWindow::OPT_CALIBRATION_FULL,2000);
+    int addr;
+
+    addr = get_addr();
+
+    if (addr > 0) {
+        emit req_scale(addr,communication::CALIBRATION_WEIGHT_FULL,2000);
     }
 }
 
 void MainWindow::on_calibration_5000_button_clicked()
 {
-    int rc;
-    rc = get_addr();
-    if (rc > 0) {
-        emit req_scale((uint8_t)rc,MainWindow::OPT_CALIBRATION_FULL,5000);
+    int addr;
+
+    addr = get_addr();
+
+    if (addr > 0) {
+        emit req_scale(addr,communication::CALIBRATION_WEIGHT_FULL,5000);
     }
 }
 
 void MainWindow::on_remove_tare_button_clicked()
 {
-    int rc;
-    rc = get_addr();
-    if (rc > 0) {
-        emit req_scale((uint8_t)rc,MainWindow::OPT_REMOVE_TARE,0);
+    int addr;
+
+    addr = get_addr();
+
+    if (addr > 0) {
+        emit req_scale(addr,communication::REMOVE_TARE_WEIGHT,0);
     }
 }
 
 void MainWindow::on_open_clicked()
 {
-    emit req_serial(ui->port_list->currentText(),ui->bandrate_list->currentText().toInt());
+    int addr;
+
+    addr = get_addr();
+    if (addr > 0) {
+        emit req_serial(ui->port_list->currentText(),ui->bandrate_list->currentText().toInt(),ui->databits_list->currentText().toInt(),ui->parity_list->currentIndex());
+    }
 }

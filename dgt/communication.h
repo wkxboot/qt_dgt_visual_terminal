@@ -30,6 +30,7 @@ public:
         CALIBRATION_WEIGHT_ZERO,
         CALIBRATION_WEIGHT_FULL,
 
+        QUEUE_TIMEOUT = 5,
         CONTINUE_TIMEOUT = 10,
         RSP_TIMEOUT = 50
     };
@@ -40,19 +41,19 @@ public:
 
     QByteArray wait_rsp(int timeout);
     void handle_rsp(QByteArray rsp, int addr,int type);
-    void rsp_result(int,int,int);
-
-public slots:
     void handle_query_weight(int);
     void handle_remove_tare_weight(int);
     void handle_calibration_weight(int,int);
-    void handle_open_serial(QString,int,int,int,int);
+
+public slots:
+    void handle_scale(int,int,int);
+    void handle_open_serial(QString,int,int,int);
 
     void handle_request_queue();
 
 signals:
     void rsp_open_serial(int,int);
-
+    void rsp_result(int,int,int);
 
 
 private:

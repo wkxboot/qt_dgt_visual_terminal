@@ -13,7 +13,12 @@ communication::communication(QObject *parent):m_serial(new QSerialPort(this)),m_
     m_open = false;
     m_queue = new QQueue<request>();
 
-    QObject::connect(m_serial,SIGNAL(readyRead()),this,SLOT(on_data_ready()));
+
+    m_queue_timer = new QTimer(this);
+    m_queue_timer->setInterval(QUEUE_TIMEOUT);
+
+    QObject::connect(m_queue_timer,SIGNAL(timeout()),this,SLOT(handle_request_queue()));
+
 }
 
 communication::~communication()
@@ -21,7 +26,7 @@ communication::~communication()
 
 }
 
-void communication::handle_open_serial(QString port_name,int baud_rates,int data_bits,int stop_bits,int parity)
+void communication::handle_open_serial(QString port_name,int baud_rates,int data_bits,int parity)
 {
     bool success;
 
@@ -30,6 +35,8 @@ void communication::handle_open_serial(QString port_name,int baud_rates,int data
        qDebug() << QString(port_name + "关闭成功.");
        emit rsp_open_serial(SERIAL_SUCCESS,SERIAL_CLOSE);
        m_open = false;
+       m_queue_timer->stop();
+
    } else {
        m_serial->setPortName(port_name);
        m_serial->setBaudRate(baud_rates);
@@ -52,6 +59,7 @@ void communication::handle_open_serial(QString port_name,int baud_rates,int data
            qDebug() << QString(port_name + "打开成功.");
            m_open = true;
            m_serial->flush();
+           m_queue_timer->start();
 
            emit rsp_open_serial(SERIAL_SUCCESS,SERIAL_OPEN);/*发送成功信号*/
        } else {
@@ -78,9 +86,10 @@ void communication::handle_query_weight(int addr)
     req.m_buffer[4] = QUERY_WEIGHT;
 
     m_crc->calculate((uint8_t *)req.m_buffer.data(),req.m_buffer.size());
-    req.m_buffer[5] = crc16 & 0xFF
+    req.m_buffer[5] = crc16 & 0xFF;
     req.m_buffer[6] = crc16 >> 8;;
 
+    qDebug() << "query weight insert queue...";
     m_queue->append(req);
 }
 
@@ -100,9 +109,10 @@ void communication::handle_remove_tare_weight(int addr)
     req.m_buffer[4] = REMOVE_TARE_WEIGHT;
 
     m_crc->calculate((uint8_t *)req.m_buffer.data(),req.m_buffer.size());
-    req.m_buffer[5] = crc16 & 0xFF
+    req.m_buffer[5] = crc16 & 0xFF;
     req.m_buffer[6] = crc16 >> 8;;
 
+    qDebug() << "remove tare weight insert queue...";
     m_queue->append(req);
 
 }
@@ -131,11 +141,40 @@ void communication::handle_calibration_weight(int addr,int weight)
 
     m_crc->calculate((uint8_t *)req.m_buffer.data(),req.m_buffer.size());
     req.m_buffer[7] = crc16 & 0xFF;
-    req.m_buffer[8] = crc16 >> 8;;
+    req.m_buffer[8] = crc16 >> 8;
 
+    qDebug() << "calibration weight insert queue...";
     m_queue->append(req);
 }
 
+
+void communication::handle_scale(int addr,int type,int value)
+{
+    m_addr = addr;
+    if (!m_open) {
+        qDebug()<< "串口没打开，忽略请求.";
+        return;
+    }
+
+    switch (type)
+    {
+    case QUERY_WEIGHT:
+        handle_query_weight(addr);
+        break;
+    case REMOVE_TARE_WEIGHT:
+        handle_remove_tare_weight(addr);
+        break;
+    case CALIBRATION_WEIGHT_ZERO:
+        handle_calibration_weight(addr,value);
+        break;
+    case CALIBRATION_WEIGHT_FULL:
+        handle_calibration_weight(addr,value);
+        break;
+    default:
+        break;
+
+    }
+}
 /*处理请求队列*/
 void communication::handle_request_queue()
 {
@@ -153,18 +192,19 @@ void communication::handle_request_queue()
     }
 
     m_queue_timer->stop();
+
     req = m_queue->dequeue();
-    qDebug("process a req...");
+    qDebug("process a req...cur queue size:%d.",m_queue->size());
 
 
     m_serial->write(req.m_buffer,req.m_buffer.size());
 
     rsp = wait_rsp(req.m_timeout);
-    if (rsp.size() > 0) {
-        handle_rsp(rsp,req.m_addr,req.m_type);
-    }
 
-     m_queue_timer->start();
+    handle_rsp(rsp,req.m_addr,req.m_type);
+
+
+    m_queue_timer->start();
 
 }
 
@@ -174,6 +214,7 @@ QByteArray communication::wait_rsp(int timeout)
     QByteArray rsp;
     QByteArray temp;
     QTime time;
+
     time.start();
 
     qDebug("wait rsp...");
@@ -188,6 +229,7 @@ QByteArray communication::wait_rsp(int timeout)
 
     qDebug("rsp complete.total time:%d",time.elapsed());
 
+    return rsp;
 }
 
 
@@ -199,10 +241,15 @@ void communication::handle_rsp(QByteArray rsp, int addr, int type)
     uint8_t addr_recv;
     int weight;
 
+    if (!m_open) {
+        qDebug("串口已关闭，不处理回应...");
+        return;
+    }
+
     qDebug("处理回应...");
     size = rsp.size();
 
-    if (size > 20) {
+    if (size > 20 || size < 8) {
         /*回应长度错误*/
         qDebug("type:%d回应长度：%d错误.",type,size);
         emit rsp_result(-1,type,size);
