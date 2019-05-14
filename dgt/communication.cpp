@@ -85,7 +85,7 @@ void communication::handle_query_weight(int addr)
     req.m_buffer[3] = addr;
     req.m_buffer[4] = QUERY_WEIGHT;
 
-    m_crc->calculate((uint8_t *)req.m_buffer.data(),req.m_buffer.size());
+    crc16 = m_crc->calculate((uint8_t *)req.m_buffer.data(),req.m_buffer.size());
     req.m_buffer[5] = crc16 & 0xFF;
     req.m_buffer[6] = crc16 >> 8;;
 
@@ -108,7 +108,7 @@ void communication::handle_remove_tare_weight(int addr)
     req.m_buffer[3] = addr;
     req.m_buffer[4] = REMOVE_TARE_WEIGHT;
 
-    m_crc->calculate((uint8_t *)req.m_buffer.data(),req.m_buffer.size());
+    crc16 = m_crc->calculate((uint8_t *)req.m_buffer.data(),req.m_buffer.size());
     req.m_buffer[5] = crc16 & 0xFF;
     req.m_buffer[6] = crc16 >> 8;;
 
@@ -124,7 +124,7 @@ void communication::handle_calibration_weight(int addr,int weight)
 
     req.m_addr = addr;
     if (weight == 0) {
-        req.m_type = CALIBRATION_WEIGHT_ZERO;
+       req.m_type = CALIBRATION_WEIGHT_ZERO;
     } else {
        req.m_type = CALIBRATION_WEIGHT_FULL;
     }
@@ -139,7 +139,7 @@ void communication::handle_calibration_weight(int addr,int weight)
     req.m_buffer[5] = weight & 0xFF;
     req.m_buffer[6] = weight >> 8;
 
-    m_crc->calculate((uint8_t *)req.m_buffer.data(),req.m_buffer.size());
+    crc16 = m_crc->calculate((uint8_t *)req.m_buffer.data(),req.m_buffer.size());
     req.m_buffer[7] = crc16 & 0xFF;
     req.m_buffer[8] = crc16 >> 8;
 
@@ -252,16 +252,21 @@ void communication::handle_rsp(QByteArray rsp, int addr, int type)
     if (size > 20 || size < 8) {
         /*回应长度错误*/
         qDebug("type:%d回应长度：%d错误.",type,size);
-        emit rsp_result(-1,type,size);
+        emit rsp_result(SERIAL_FAIL,type,size);
         return;
     } 
-    crc_recv = rsp[size - 2] + rsp[size - 1] * 256;
+    crc_recv = (uint8_t)rsp.data()[size - 2] + (uint8_t)rsp[size - 1] * 256;
     crc_calculate = m_crc->calculate((uint8_t *)rsp.data(),size - 2);
 
     if (crc_recv != crc_calculate) {
         /*校验错误*/
         qDebug("type:%d校验错误.",type);
-        emit rsp_result(-1,type,crc_recv) ;
+        for (int i= 0;i < rsp.size();i++) {
+              qDebug() << QString::number( rsp[i]);
+        }
+
+
+        emit rsp_result(SERIAL_FAIL,type,crc_recv) ;
         return;
     }
 
@@ -271,33 +276,33 @@ void communication::handle_rsp(QByteArray rsp, int addr, int type)
     if (addr != addr_recv) {
         /*回应地址错误*/
         qDebug("type:%d回应地址：%d错误.",type,addr_recv);
-        emit rsp_result(-1,type,addr_recv);
+        emit rsp_result(SERIAL_FAIL,type,addr_recv);
         return;
     }
 
     if (type_recv != type) {
         /*回应类型错误*/
         qDebug("type:%d回应类型：%d错误.",type,type_recv);
-        emit rsp_result(-1,type,type_recv);
+        emit rsp_result(SERIAL_FAIL,type,type_recv);
         return;
     }
 
     switch(type) {
     /*净重值*/
     case QUERY_WEIGHT:
-        weight = rsp[5] + rsp[6] * 256;
+        weight = (uint8_t)rsp[5] + (uint8_t)rsp[6] * 256;
         /*回应重量*/
         qDebug("重量值：%d",weight);
-        emit rsp_result(0,type,weight);
+        emit rsp_result(SERIAL_SUCCESS,type,weight);
         
     break;
     /*去皮*/
     case REMOVE_TARE_WEIGHT:
         /*成功*/
         if (rsp.at(5) == 0) {
-            emit rsp_result(0,type,0);
+            emit rsp_result(SERIAL_SUCCESS,type,0);
         } else {
-            emit rsp_result(-1,type,0);
+            emit rsp_result(SERIAL_FAIL,type,0);
         }
 
     break;
@@ -305,9 +310,9 @@ void communication::handle_rsp(QByteArray rsp, int addr, int type)
     case CALIBRATION_WEIGHT_ZERO:
         /*成功*/
         if (rsp.at(5) == 0) {
-            emit rsp_result(0,type,0);
+            emit rsp_result(SERIAL_SUCCESS,type,0);
         } else {
-            emit rsp_result(-1,type,0);
+            emit rsp_result(SERIAL_FAIL,type,0);
         }
 
     break;
@@ -315,9 +320,9 @@ void communication::handle_rsp(QByteArray rsp, int addr, int type)
     case CALIBRATION_WEIGHT_FULL:
         /*成功*/
         if (rsp.at(5) == 0) {
-            emit rsp_result(0,type,0);
+            emit rsp_result(SERIAL_SUCCESS,type,0);
         } else {
-            emit rsp_result(-1,type,0);
+            emit rsp_result(SERIAL_FAIL,type,0);
         }
 
     break;

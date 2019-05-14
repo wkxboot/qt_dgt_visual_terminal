@@ -35,8 +35,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->parity_list->addItem("无校验");
     ui->parity_list->addItem("奇校验");
-    ui->bandrate_list->addItem("偶校验");
-    ui->bandrate_list->setCurrentIndex(0);
+    ui->parity_list->addItem("偶校验");
+    ui->parity_list->setCurrentIndex(0);
 
     QRegExp regExp("[1-9]{0,3}");
     ui->addr_input->setValidator(new QRegExpValidator(regExp, this));
@@ -112,7 +112,7 @@ void MainWindow::handle_scale_result(int rc,int type,int value)
     switch (type) {
     case communication::QUERY_WEIGHT:
         if (rc == communication::SERIAL_SUCCESS && value != 0x7FFF) {
-            ui->weight_display->display(QString::number(value));
+            ui->weight_display->display(QString::number((int16_t)value));
          } else {
             ui->weight_display->display("err");
          }
@@ -121,21 +121,21 @@ void MainWindow::handle_scale_result(int rc,int type,int value)
         emit req_scale(get_addr(),communication::QUERY_WEIGHT,0);
         break;
     case communication::REMOVE_TARE_WEIGHT:
-        if (rc == 0) {
+        if (rc == communication::SERIAL_SUCCESS) {
             QMessageBox::information(this,"成功","去皮成功",QMessageBox::Ok);
         } else {
             QMessageBox::information(this,"失败","去皮失败",QMessageBox::Ok);
         }
         break;
     case communication::CALIBRATION_WEIGHT_ZERO:
-        if (rc == 0) {
+        if (rc == communication::SERIAL_SUCCESS) {
             QMessageBox::information(this,"成功","0点校准成功",QMessageBox::Ok);
         } else {
             QMessageBox::information(this,"失败","0点校准失败",QMessageBox::Ok);
         }
         break;
     case communication::CALIBRATION_WEIGHT_FULL:
-        if (rc == 0) {
+        if (rc == communication::SERIAL_SUCCESS) {
              QMessageBox::information(this,"成功","增益校准成功",QMessageBox::Ok);
         } else {
              QMessageBox::information(this,"失败","增益校准失败",QMessageBox::Ok);
