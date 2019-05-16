@@ -32,8 +32,10 @@ public:
 
         QUEUE_TIMEOUT = 5,
         CONTINUE_TIMEOUT = 10,
-        RSP_TIMEOUT = 50
-    };
+        QUERY_WEIGHT_TIMEOUT = 50,
+        REMOVE_TARE_TIMEOUT = 260,
+        CALIBRATION_TIMEOUT = 260
+       };
 
     communication(QObject *parent = nullptr);
     ~communication();

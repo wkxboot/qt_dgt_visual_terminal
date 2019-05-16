@@ -77,7 +77,7 @@ void communication::handle_query_weight(int addr)
 
     req.m_addr = addr;
     req.m_type = QUERY_WEIGHT;
-    req.m_timeout = RSP_TIMEOUT;
+    req.m_timeout = QUERY_WEIGHT_TIMEOUT;
 
     req.m_buffer[0] = 0x4d;
     req.m_buffer[1] = 0x4c;
@@ -100,7 +100,7 @@ void communication::handle_remove_tare_weight(int addr)
 
     req.m_addr = addr;
     req.m_type = REMOVE_TARE_WEIGHT;
-    req.m_timeout = RSP_TIMEOUT;
+    req.m_timeout = REMOVE_TARE_TIMEOUT;
 
     req.m_buffer[0] = 0x4d;
     req.m_buffer[1] = 0x4c;
@@ -128,7 +128,7 @@ void communication::handle_calibration_weight(int addr,int weight)
     } else {
        req.m_type = CALIBRATION_WEIGHT_FULL;
     }
-    req.m_timeout = RSP_TIMEOUT;
+    req.m_timeout = CALIBRATION_TIMEOUT;
 
     req.m_buffer[0] = 0x4d;
     req.m_buffer[1] = 0x4c;
