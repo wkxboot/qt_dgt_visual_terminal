@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->parity_list->addItem("偶校验");
     ui->parity_list->setCurrentIndex(0);
 
-    QRegExp regExp("[1-9]{0,3}");
+    QRegExp regExp("[0-9]{0,3}");
     ui->addr_input->setValidator(new QRegExpValidator(regExp, this));
 
     ui->addr_input->setText(QString::number(1));
