@@ -34,7 +34,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>数字称重变送器终端v1.1</string>
+   <string>数字称重变送器终端v1.0.4</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QPushButton" name="calibration_zero_button">
