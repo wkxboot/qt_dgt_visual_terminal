@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>437</width>
-    <height>567</height>
+    <height>650</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,13 +19,13 @@
   <property name="minimumSize">
    <size>
     <width>437</width>
-    <height>567</height>
+    <height>650</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>437</width>
-    <height>567</height>
+    <height>650</height>
    </size>
   </property>
   <property name="font">
@@ -34,15 +34,15 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>数字称重变送器终端v1.0.4</string>
+   <string>数字称重变送器终端v1.0.5</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QPushButton" name="calibration_zero_button">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>270</y>
-      <width>321</width>
+      <x>8</x>
+      <y>346</y>
+      <width>351</width>
       <height>40</height>
      </rect>
     </property>
@@ -65,8 +65,8 @@
    <widget class="QLabel" name="label_3">
     <property name="geometry">
      <rect>
-      <x>380</x>
-      <y>150</y>
+      <x>370</x>
+      <y>230</y>
       <width>16</width>
       <height>32</height>
      </rect>
@@ -99,9 +99,9 @@
    <widget class="QPushButton" name="calibration_1000_button">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>340</y>
-      <width>321</width>
+      <x>8</x>
+      <y>416</y>
+      <width>351</width>
       <height>41</height>
      </rect>
     </property>
@@ -118,9 +118,9 @@
    <widget class="QPushButton" name="remove_tare_button">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>210</y>
-      <width>321</width>
+      <x>8</x>
+      <y>286</y>
+      <width>351</width>
       <height>40</height>
      </rect>
     </property>
@@ -146,9 +146,9 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>400</y>
-      <width>321</width>
+      <x>8</x>
+      <y>476</y>
+      <width>351</width>
       <height>41</height>
      </rect>
     </property>
@@ -171,9 +171,9 @@
    <widget class="QPushButton" name="calibration_5000_button">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>460</y>
-      <width>321</width>
+      <x>8</x>
+      <y>536</y>
+      <width>351</width>
       <height>40</height>
      </rect>
     </property>
@@ -190,9 +190,9 @@
    <widget class="QLCDNumber" name="weight_display">
     <property name="geometry">
      <rect>
-      <x>42</x>
-      <y>104</y>
-      <width>321</width>
+      <x>10</x>
+      <y>180</y>
+      <width>351</width>
       <height>81</height>
      </rect>
     </property>
@@ -276,9 +276,9 @@
    <widget class="QPushButton" name="open">
     <property name="geometry">
      <rect>
-      <x>291</x>
-      <y>39</y>
-      <width>75</width>
+      <x>300</x>
+      <y>40</y>
+      <width>91</width>
       <height>23</height>
      </rect>
     </property>
@@ -368,8 +368,8 @@
    <widget class="QLineEdit" name="addr_input">
     <property name="geometry">
      <rect>
-      <x>374</x>
-      <y>11</y>
+      <x>340</x>
+      <y>10</y>
       <width>50</width>
       <height>20</height>
      </rect>
@@ -399,10 +399,10 @@
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>290</x>
-      <y>14</y>
-      <width>78</width>
-      <height>16</height>
+      <x>300</x>
+      <y>10</y>
+      <width>41</width>
+      <height>20</height>
      </rect>
     </property>
     <property name="sizePolicy">
@@ -412,7 +412,130 @@
      </sizepolicy>
     </property>
     <property name="text">
-     <string>变送器地址：</string>
+     <string>地址：</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="set_addr_button">
+    <property name="geometry">
+     <rect>
+      <x>70</x>
+      <y>140</y>
+      <width>71</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>设置地址</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="fw_version">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>80</y>
+      <width>71</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>固件版本：</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="fw_version_display">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>80</y>
+      <width>101</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>未知</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="addr_input_setting">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>140</y>
+      <width>50</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>50</width>
+      <height>0</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>50</width>
+      <height>16777215</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>1</string>
+    </property>
+    <property name="maxLength">
+     <number>3</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sensor_id_display">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>110</y>
+      <width>101</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>未知</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sensor_id">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>110</y>
+      <width>71</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>传感器ID：</string>
     </property>
    </widget>
   </widget>

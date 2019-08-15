@@ -83,7 +83,7 @@ uint16_t crc16::calculate(uint8_t *src, int size)
         crc_lo = table_crc_lo[i];
     }
 
-    return uint16_t(crc_hi << 8 | crc_lo);
+    return ((uint16_t)crc_hi << 8 | crc_lo);
 }
 
 crc16::crc16()

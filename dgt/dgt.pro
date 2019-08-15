@@ -8,7 +8,7 @@ QT       += core gui
 QT       += serialport
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = hello
+TARGET = qt_dgt_visual
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -29,13 +29,13 @@ SOURCES += \
         mainwindow.cpp \
     crc16.cpp \
     communication.cpp \
-    request.cpp
+    protocol.cpp
 
 HEADERS += \
         mainwindow.h \
     crc16.h \
     communication.h \
-    request.h
+    protocol.h
 
 FORMS += \
         mainwindow.ui

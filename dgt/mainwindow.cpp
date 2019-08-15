@@ -12,16 +12,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),comm(new communication(0))
 {
     ui->setupUi(this);
-    ui->port_list->addItem("COM1");
-    ui->port_list->addItem("COM2");
-    ui->port_list->addItem("COM3");
-    ui->port_list->addItem("COM4");
-    ui->port_list->addItem("COM5");
-    ui->port_list->addItem("COM6");
-    ui->port_list->addItem("COM7");
-    ui->port_list->addItem("COM8");
-    ui->port_list->addItem("COM9");
-    ui->port_list->addItem("COM10");
+
+    /*添加端口*/
+    QStringList m_serialPortName;
+
+    m_serialPortName  = comm->get_serial_port_name_list();
+    QString name;
+    foreach(name,m_serialPortName) {
+        ui->port_list->addItem(name);
+    }
+
     ui->port_list->setCurrentIndex(0);
 
     ui->bandrate_list->addItem("115200");
@@ -48,19 +48,8 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<int16_t>("int16_t");
 
-    QObject::connect(this,SIGNAL(req_serial(QString,int,int,int)),comm,SLOT(handle_open_serial(QString,int,int,int)));
-
-    QObject::connect(this,SIGNAL(req_scale(int,int,int)),comm,SLOT(handle_scale(int,int,int)));
-
-
-    QObject::connect(comm,SIGNAL(rsp_open_serial(int,int)),this,SLOT(handle_open_serial(int,int)));
-    QObject::connect(comm,SIGNAL(rsp_result(int,int,int)),this,SLOT(handle_scale_result(int,int,int)));
-
-    QThread *thread = new QThread(0);
-    comm->moveToThread(thread);
-    comm->m_serial->moveToThread(thread);
-    thread->start();
-
+    QObject::connect(this,SIGNAL(ui_request(int,int)),comm,SLOT(handle_ui_request(int,int)));
+    QObject::connect(comm,SIGNAL(rsp_ui_request_result(int,int,int)),this,SLOT(handle_ui_request_result(int,int,int)));
 
 }
 
@@ -69,81 +58,60 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
-void MainWindow::handle_open_serial(int rc,int type)
+void MainWindow::handle_ui_request_result(int rc,int id,int value)
 {
-    if (type == communication::SERIAL_OPEN) {
-        if (rc == communication::SERIAL_SUCCESS) {
-
-            ui->port_list->setEnabled(false);
-            ui->bandrate_list->setEnabled(false);
-            ui->databits_list->setEnabled(false);
-            ui->parity_list->setEnabled(false);
-            ui->addr_input->setEnabled(false);
-
-            ui->open->setText("关闭");
-            qDebug("打开串口成功.\r\n");
-
-            query_weight();
-        } else {
-            QMessageBox::information(this,"错误",ui->port_list->currentText() + "串口打开失败",QMessageBox::Ok);
-        }
-
-    } else {
-        if (rc == communication::SERIAL_SUCCESS) {
-
-            ui->port_list->setEnabled(true);
-            ui->bandrate_list->setEnabled(true);
-            ui->databits_list->setEnabled(true);
-            ui->parity_list->setEnabled(true);
-            ui->addr_input->setEnabled(true);
-
-            ui->open->setText("打开");
-            qDebug("关闭串口成功.\r\n");
-            ui->weight_display->display("----------");
-        } else {
-            QMessageBox::information(this,"错误",ui->port_list->currentText() + "串口关闭失败",QMessageBox::Ok);
-        }
-    }
-}
-
-void MainWindow::handle_scale_result(int rc,int type,int value)
-{
-    switch (type) {
-    case communication::QUERY_WEIGHT:
-        if (rc == communication::SERIAL_SUCCESS && value != 0x7FFF) {
+    switch (id) {
+    case communication::MSG_ID_NET_WEIGHT:
+        if (rc == 0 && value != 0x7FFF) {
             ui->weight_display->display(QString::number((int16_t)value));
          } else {
             ui->weight_display->display("err");
          }
-
-        /*重新轮询净重*/
-        emit req_scale(get_addr(),communication::QUERY_WEIGHT,0);
         break;
-    case communication::REMOVE_TARE_WEIGHT:
-        if (rc == communication::SERIAL_SUCCESS) {
+    case communication::MSG_ID_REMOVE_TARE:
+        if (rc == 0) {
             QMessageBox::information(this,"成功","去皮成功",QMessageBox::Ok);
         } else {
             QMessageBox::information(this,"失败","去皮失败",QMessageBox::Ok);
         }
         break;
-    case communication::CALIBRATION_WEIGHT_ZERO:
-        if (rc == communication::SERIAL_SUCCESS) {
+    case communication::MSG_ID_CALIBRATE_ZERO:
+        if (rc == 0) {
             QMessageBox::information(this,"成功","0点校准成功",QMessageBox::Ok);
         } else {
             QMessageBox::information(this,"失败","0点校准失败",QMessageBox::Ok);
         }
         break;
-    case communication::CALIBRATION_WEIGHT_FULL:
-        if (rc == communication::SERIAL_SUCCESS) {
+    case communication::MSG_ID_CALIBRATE_FULL:
+        if (rc == 0) {
              QMessageBox::information(this,"成功","增益校准成功",QMessageBox::Ok);
         } else {
              QMessageBox::information(this,"失败","增益校准失败",QMessageBox::Ok);
         }
         break;
+    case communication::MSG_ID_SENSOR_ID:
+        if (rc == 0) {
+            ui->sensor_id_display->setText(QString::number(value,16));
+        } else {
+            ui->sensor_id_display->setText("错误");
+        }
+        break;
+    case communication::MSG_ID_FW_VERSION:
+        if (rc == 0) {
+            ui->fw_version_display->setText(QString::number(value >> 8) + "." + QString::number(value & 0xFF));
+        } else {
+            ui->fw_version_display->setText("错误");
+        }
+        break;
+    case communication::MSG_ID_SET_ADDR:
+        if (rc == 0) {
+             QMessageBox::information(this,"成功","设置地址成功",QMessageBox::Ok);
+        } else {
+             QMessageBox::information(this,"失败","设置地址失败",QMessageBox::Ok);
+        }
+        break;
     default:
-        qDebug()<<"err in handle scale rsp.\r\n";
-
+        qDebug()<<"err in msg id.\r\n";
     }
 }
 
@@ -163,68 +131,85 @@ int MainWindow::get_addr(void)
     return addr;
 }
 
-void MainWindow::query_weight()
+int MainWindow::get_addr_setting(void)
 {
     int addr;
 
-    addr = get_addr();
-
-    if (addr > 0) {
-        emit req_scale(addr,communication::QUERY_WEIGHT,0);
+    if (ui->addr_input_setting->text().isEmpty()){
+       QMessageBox::information(this,"错误","变送器地址为空",QMessageBox::Ok);
+       return -1;
     }
+
+    addr = ui->addr_input_setting->text().toInt();
+
+    return addr;
 }
 
 void MainWindow::on_calibration_zero_button_clicked()
 {
-    int addr;
-    addr = get_addr();
-
-    if (addr > 0) {
-        emit req_scale(addr,communication::CALIBRATION_WEIGHT_ZERO,0);
+    if (!comm->is_serial_open()) {
+        QMessageBox::information(this,"错误","串口没有打开",QMessageBox::Ok);
+        return;
     }
+    emit ui_request(communication::MSG_ID_CALIBRATE_ZERO,0);
 }
 
 void MainWindow::on_calibration_1000_button_clicked()
 {
-    int addr;
-
-    addr = get_addr();
-
-    if (addr > 0) {
-        emit req_scale(addr,communication::CALIBRATION_WEIGHT_FULL,1000);
+    if (!comm->is_serial_open()) {
+        QMessageBox::information(this,"错误","串口没有打开",QMessageBox::Ok);
+        return;
     }
+    emit ui_request(communication::MSG_ID_CALIBRATE_FULL,1000);
 }
 
 void MainWindow::on_calibration_2000_button_clicked()
 {
-    int addr;
-
-    addr = get_addr();
-
-    if (addr > 0) {
-        emit req_scale(addr,communication::CALIBRATION_WEIGHT_FULL,2000);
+    if (!comm->is_serial_open()) {
+        QMessageBox::information(this,"错误","串口没有打开",QMessageBox::Ok);
+        return;
     }
+    emit ui_request(communication::MSG_ID_CALIBRATE_FULL,2000);
 }
 
 void MainWindow::on_calibration_5000_button_clicked()
 {
-    int addr;
-
-    addr = get_addr();
-
-    if (addr > 0) {
-        emit req_scale(addr,communication::CALIBRATION_WEIGHT_FULL,5000);
+    if (!comm->is_serial_open()) {
+        QMessageBox::information(this,"错误","串口没有打开",QMessageBox::Ok);
+        return;
     }
+    emit ui_request(communication::MSG_ID_CALIBRATE_FULL,5000);
 }
 
 void MainWindow::on_remove_tare_button_clicked()
 {
     int addr;
 
+    if (!comm->is_serial_open()) {
+        QMessageBox::information(this,"错误","串口没有打开",QMessageBox::Ok);
+        return;
+    }
+
     addr = get_addr();
 
     if (addr > 0) {
-        emit req_scale(addr,communication::REMOVE_TARE_WEIGHT,0);
+        emit ui_request(communication::MSG_ID_REMOVE_TARE,0);
+    }
+}
+
+
+void MainWindow::on_set_addr_button_clicked()
+{
+    int addr_setting;
+
+    if (!comm->is_serial_open()) {
+        QMessageBox::information(this,"错误","串口没有打开",QMessageBox::Ok);
+        return;
+    }
+
+    addr_setting = get_addr_setting();
+    if (addr_setting > 0) {
+        emit ui_request(communication::MSG_ID_SET_ADDR,addr_setting);
     }
 }
 
@@ -234,6 +219,36 @@ void MainWindow::on_open_clicked()
 
     addr = get_addr();
     if (addr > 0) {
-        emit req_serial(ui->port_list->currentText(),ui->bandrate_list->currentText().toInt(),ui->databits_list->currentText().toInt(),ui->parity_list->currentIndex());
+       if (comm->is_serial_open()) {
+           comm->close_serial(ui->port_list->currentText());
+           ui->port_list->setEnabled(true);
+           ui->bandrate_list->setEnabled(true);
+           ui->databits_list->setEnabled(true);
+           ui->parity_list->setEnabled(true);
+           ui->addr_input->setEnabled(true);
+
+           ui->open->setText("打开");
+           qDebug("关闭串口成功.\r\n");
+           ui->weight_display->display("----------");
+           ui->sensor_id_display->setText("未知");
+           ui->fw_version_display->setText("未知");
+       } else {
+           if (comm->open_serial(ui->port_list->currentText(),ui->bandrate_list->currentText().toInt(),ui->databits_list->currentText().toInt(),ui->parity_list->currentText().toInt()) == 0) {
+               ui->port_list->setEnabled(false);
+               ui->bandrate_list->setEnabled(false);
+               ui->databits_list->setEnabled(false);
+               ui->parity_list->setEnabled(false);
+               ui->addr_input->setEnabled(false);
+
+               ui->open->setText("关闭");
+               comm->set_comm_addr(addr);
+
+               qDebug("打开串口成功.\r\n");
+           } else {
+               QMessageBox::information(this,"错误",ui->port_list->currentText() + "串口打开失败",QMessageBox::Ok);
+           }
+       }
     }
+
 }
+

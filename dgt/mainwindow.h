@@ -15,12 +15,10 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    int get_addr(void);
-    void query_weight();
 
 public slots:
-    void handle_open_serial(int,int);
-    void handle_scale_result(int,int,int);
+
+    void handle_ui_request_result(int,int,int);
 
     void on_remove_tare_button_clicked();
 
@@ -35,12 +33,17 @@ public slots:
     void on_open_clicked();
 
 signals:
-    void req_scale(int,int,int);
-    void req_serial(QString port_name,int baud_rates,int data_bits,int parity);
+    void ui_request(int,int);
+
+private slots:
+    void on_set_addr_button_clicked();
+
 private:
+    int get_addr(void);
+    int get_addr_setting(void);
+
     Ui::MainWindow *ui;
     communication   *comm;
-    QTimer *m_query_weight_timer;
 };
 
 #endif // MAINWINDOW_H

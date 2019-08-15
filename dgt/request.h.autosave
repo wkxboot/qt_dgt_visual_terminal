@@ -1,0 +1,27 @@
+#ifndef REQUEST_H
+#define REQUEST_H
+
+#include "qbytearray.h"
+#include "qdebug.h"
+#include "crc16.h"
+
+class protocol
+{
+public:
+    protocol();
+    ~protocol();
+    int construct(int addr,int code,int value_cnt,int *value,int timeout);
+    int parse (QByteArray m_response_buffer);
+    int get_error_code();
+    int request_code();
+    
+private:
+    QByteArray m_request_buffer;
+    /*请求部分*/
+    int m_code;
+    int m_addr;
+    int m_timeout;
+    crc16 crc;
+};
+
+#endif // REQUEST_H
