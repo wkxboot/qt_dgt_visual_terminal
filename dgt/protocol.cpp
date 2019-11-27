@@ -90,7 +90,7 @@ int protocol::parse(QByteArray response)
             qDebug() << QString("回应值数量错误");
             return -15;
         }
-        m_parse_value = (int)response.at(5) + (int)response.at(6) * 256;
+        m_parse_value = (uint8_t)response[6] * 256 + (uint8_t)response[5];
         rc = 0;
         break;
     case PROTOCOL_CODE_REMOVE_TARE:

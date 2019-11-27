@@ -42,7 +42,7 @@ private:
     int m_addr;
     int m_timeout;
     crc16 m_crc;
-    int m_parse_value;
+    int16_t m_parse_value;
 
 };
 
