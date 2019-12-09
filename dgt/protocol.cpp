@@ -74,7 +74,7 @@ int protocol::parse(QByteArray response)
         qDebug() << QString("回应crc错误") << "cal:" << crc_cal <<"recv:" << crc_recv;
         return -13;
     }
-    addr = response.at(3);
+    addr = (uint8_t)response.at(3);
     code = response.at(4);
     if (addr != m_addr ) {
         qDebug() << QString("回应地址错误");

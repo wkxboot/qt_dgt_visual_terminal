@@ -183,18 +183,11 @@ void MainWindow::on_calibration_5000_button_clicked()
 
 void MainWindow::on_remove_tare_button_clicked()
 {
-    int addr;
-
     if (!comm->is_serial_open()) {
         QMessageBox::information(this,"错误","串口没有打开",QMessageBox::Ok);
         return;
     }
-
-    addr = get_addr();
-
-    if (addr > 0) {
-        emit ui_request(communication::MSG_ID_REMOVE_TARE,0);
-    }
+    emit ui_request(communication::MSG_ID_REMOVE_TARE,0);
 }
 
 
@@ -208,7 +201,7 @@ void MainWindow::on_set_addr_button_clicked()
     }
 
     addr_setting = get_addr_setting();
-    if (addr_setting > 0) {
+    if (addr_setting >= 0) {
         emit ui_request(communication::MSG_ID_SET_ADDR,addr_setting);
     }
 }
@@ -218,7 +211,7 @@ void MainWindow::on_open_clicked()
     int addr;
 
     addr = get_addr();
-    if (addr > 0) {
+    if (addr >= 0) {
        if (comm->is_serial_open()) {
            comm->close_serial(ui->port_list->currentText());
            ui->port_list->setEnabled(true);
